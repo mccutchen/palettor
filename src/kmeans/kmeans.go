@@ -1,47 +1,54 @@
 package kmeans
 
 import (
-	"log"
+	"fmt"
+	"image/color"
 	"math/rand"
 	"time"
 )
 
-// FindClusters finds clusters
-func FindClusters(k int, xs []int, maxIterations int) map[int][]int {
-	centroids := initializeCentroids(k, xs)
+// Cluster finds k clusters in the given observations and returns a mapping
+// from cluster centroid to that cluster's "weight" (i.e. its size relative to
+// the total number of observations) in the range [0, 1].
+//
+// More info: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
+func Cluster(k int, observations []color.Color, maxIterations int) (map[color.Color]float64, error) {
+	observationCount := len(observations)
+	if observationCount < k {
+		return nil, fmt.Errorf("too few observations for k (%d < %d)", observationCount, k)
+	}
 
-	var clusters map[int][]int
+	// Choose k random observations as our initial centroids. Apparently, this
+	// is the "Forgy Method". TODO: Try the Random Partition method?
+	// https://en.wikipedia.org/wiki/K-means_clustering#Initialization_methods
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	centroids := make([]color.Color, k)
+	for i := 0; i < k; i++ {
+		centroids[i] = observations[r.Intn(observationCount)]
+	}
 
+	// Our clusters will be reset on each loop through the algorithm.
+	var clusters map[color.Color][]color.Color
+
+	// The algorithm isn't guaranteed to converge, so we put a limit on the
+	// number of attempts we will make.
 	for i := 0; i < maxIterations; i++ {
-		clusters = make(map[int][]int)
+		clusters = make(map[color.Color][]color.Color, k)
 
-		log.Println()
-		log.Printf("iteration: %d", i)
-		log.Printf("centroids: %v", centroids)
-		log.Printf("clusters:  %v", clusters)
-
-		// assign observations to centroids
-		log.Printf("=== assignment")
-		for _, x := range xs {
-			log.Printf("... x == %v", x)
+		// Assign each observation to the cluster of the closest centroid.
+		for _, x := range observations {
 			centroid := nearest(x, centroids)
 			clusters[centroid] = append(clusters[centroid], x)
 		}
 
-		// update centroids
+		// Pick new centroids from each cluster. If none of the centroids
+		// change, the clusters have stabilized and we're done.
 		converged := true
-		newCentroids := make([]int, k)
+		newCentroids := make([]color.Color, k)
 		j := 0
-		log.Printf("=== update")
-		log.Printf("... len(clusters) == %v", len(clusters))
-		for centroid, observations := range clusters {
-			newCentroid := findCentroid(observations)
-			log.Printf("... observations == %v", observations)
-			log.Printf("... old centroid == %v", centroid)
-			log.Printf("... new centroid == %v", newCentroid)
-			log.Printf("... j == %v", j)
+		for centroid, cluster := range clusters {
+			newCentroid := findCentroid(cluster)
 			if newCentroid != centroid {
-				log.Printf("!!! NOT CONVERGED")
 				converged = false
 			}
 			newCentroids[j] = newCentroid
@@ -52,54 +59,58 @@ func FindClusters(k int, xs []int, maxIterations int) map[int][]int {
 			break
 		}
 	}
-	return clusters
-}
 
-// FindCentroids finds centroids
-func FindCentroids(k int, xs []int, maxIterations int) []int {
-	clusters := FindClusters(k, xs, maxIterations)
-	centroids := make([]int, len(clusters))
-	i := 0
-	for key := range clusters {
-		centroids[i] = key
-		i++
+	clusterWeights := make(map[color.Color]float64, k)
+	for centroid, cluster := range clusters {
+		clusterWeights[centroid] = float64(len(cluster)) / float64(observationCount)
 	}
-	return centroids
+	return clusterWeights, nil
 }
 
-func nearest(x int, xs []int) int {
-	var minDist int
-	var nearestX int
-	for i, xn := range xs {
-		dist := distance(x, xn)
+// Find the observation closest to the mean of the given observations.
+//
+// Note: I think this is a departure from the "standard" algorithm, which seems
+// to instead use the actual mean of the given observations (which is likely
+// not actually present in those observations).
+func findCentroid(observations []color.Color) color.Color {
+	var r, g, b, a, count uint32
+	for _, x := range observations {
+		r1, g1, b1, a1 := x.RGBA()
+		r += r1
+		g += g1
+		b += b1
+		a += a1
+		count++
+	}
+	center := &color.RGBA64{
+		R: uint16(r / count),
+		G: uint16(g / count),
+		B: uint16(b / count),
+		A: uint16(a / count),
+	}
+	return nearest(center, observations)
+}
+
+// Find the item in the haystack to which the needle is closest.
+func nearest(needle color.Color, haystack []color.Color) color.Color {
+	var minDist uint32
+	var result color.Color
+	for i, candidate := range haystack {
+		dist := distance(needle, candidate)
 		if i == 0 || dist < minDist {
 			minDist = dist
-			nearestX = xn
+			result = candidate
 		}
 	}
-	return nearestX
+	return result
 }
 
-func distance(a, b int) int {
-	delta := a - b
-	return delta * delta
-}
-
-func initializeCentroids(k int, xs []int) []int {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	total := len(xs)
-	centroids := make([]int, k)
-	for i := 0; i < k; i++ {
-		centroids[i] = xs[r.Intn(total)]
-	}
-	return centroids
-}
-
-func findCentroid(xs []int) int {
-	total := 0
-	for _, x := range xs {
-		total += x
-	}
-	center := total / len(xs)
-	return nearest(center, xs)
+// Calculate the square of the Euclidean distance between two colors.
+func distance(a, b color.Color) uint32 {
+	r1, g1, b1, _ := a.RGBA()
+	r2, g2, b2, _ := b.RGBA()
+	dr := r1 - r2
+	dg := g1 - g2
+	db := b1 - b2
+	return dr*dr + dg*dg + db*db
 }
