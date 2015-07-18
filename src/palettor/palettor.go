@@ -36,12 +36,15 @@ func main() {
 			i++
 		}
 	}
+	originalImg = nil
+	img = nil
 
 	log.Printf("color count:  %v", len(colors))
 	log.Printf("first color: %#v %T", colors[0], colors[0])
 
-	clusters, _ := kmeans.Cluster(k, colors, 100)
-	log.Printf("clusters: %v", clusters)
+	clusters, iterations, _ := kmeans.Cluster(k, colors, 100)
+	log.Printf("clusters:   %v", clusters)
+	log.Printf("iterations: %v", iterations)
 
 	// png.Encode(os.Stdout, img)
 }

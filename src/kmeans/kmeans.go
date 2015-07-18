@@ -9,13 +9,14 @@ import (
 
 // Cluster finds k clusters in the given observations and returns a mapping
 // from cluster centroid to that cluster's "weight" (i.e. its size relative to
-// the total number of observations) in the range [0, 1].
+// the total number of observations) in the range [0, 1], along with the number
+// of iterations taken to cluster the observations.
 //
 // More info: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
-func Cluster(k int, observations []color.Color, maxIterations int) (map[color.Color]float64, error) {
+func Cluster(k int, observations []color.Color, maxIterations int) (map[color.Color]float64, int, error) {
 	observationCount := len(observations)
 	if observationCount < k {
-		return nil, fmt.Errorf("too few observations for k (%d < %d)", observationCount, k)
+		return nil, 0, fmt.Errorf("too few observations for k (%d < %d)", observationCount, k)
 	}
 
 	// Choose k random observations as our initial centroids. Apparently, this
@@ -32,7 +33,8 @@ func Cluster(k int, observations []color.Color, maxIterations int) (map[color.Co
 
 	// The algorithm isn't guaranteed to converge, so we put a limit on the
 	// number of attempts we will make.
-	for i := 0; i < maxIterations; i++ {
+	var iterations int
+	for iterations = 0; iterations < maxIterations; iterations++ {
 		clusters = make(map[color.Color][]color.Color, k)
 
 		// Assign each observation to the cluster of the closest centroid.
@@ -64,7 +66,7 @@ func Cluster(k int, observations []color.Color, maxIterations int) (map[color.Co
 	for centroid, cluster := range clusters {
 		clusterWeights[centroid] = float64(len(cluster)) / float64(observationCount)
 	}
-	return clusterWeights, nil
+	return clusterWeights, iterations, nil
 }
 
 // Find the observation closest to the mean of the given observations.
