@@ -2,6 +2,9 @@
 
 Yet another way to extract dominant colors from an image using [k-means clustering][1].
 
+[![Build Status](https://travis-ci.org/mccutchen/palettor.svg?branch=master)](http://travis-ci.org/mccutchen/palettor)
+
+
 ## Example
 
 ```go
