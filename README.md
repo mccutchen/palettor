@@ -1,8 +1,23 @@
-# palettor
+# Palettor
 
 Yet another way to extract dominant colors from an image using [k-means clustering][1].
 
+
+## Tests
+
 [![Build Status](https://travis-ci.org/mccutchen/palettor.svg?branch=master)](http://travis-ci.org/mccutchen/palettor)
+
+### Unit tests
+
+```bash
+make test
+```
+
+### Benchmarks
+
+```bash
+make benchmark
+```
 
 
 ## Example
@@ -32,17 +47,14 @@ func main() {
     // Reduce it to a manageable size
     img := resize.Thumbnail(200, 200, originalImg, resize.Lanczos3)
 
-    // Extract the 3 most dominant colors
+    // Extract the 3 most dominant colors, halting the clustering algorithm
+    // after 100 iterations if the clusters have not yet converged.
     k := 3
-
-    // Stop the clustering algorithm after 100 iterations if the clusters have
-    // not yet converged
     maxIterations := 100
-
     palette, err := palettor.DominantColors(k, maxIterations, img)
 
-    // The only possible error is if k is larger than the number of pixels in
-    // the input image
+    // Err will only be non-nil if k is larger than the number of pixels in the
+    // input image.
     if err != nil {
         log.Fatalf("image too small")
     }
