@@ -1,4 +1,4 @@
-package kmeans
+package palettor
 
 import (
 	"fmt"
@@ -13,22 +13,13 @@ import (
 // of iterations taken to cluster the observations.
 //
 // More info: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
-func Cluster(k int, observations []color.Color, maxIterations int) (map[color.Color]float64, int, error) {
+func Cluster(k, maxIterations int, observations []color.Color) (map[color.Color]float64, int, error) {
 	observationCount := len(observations)
 	if observationCount < k {
 		return nil, 0, fmt.Errorf("too few observations for k (%d < %d)", observationCount, k)
 	}
 
-	// Choose k random observations as our initial centroids. Apparently, this
-	// is the "Forgy Method". TODO: Try the Random Partition method?
-	// https://en.wikipedia.org/wiki/K-means_clustering#Initialization_methods
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	centroids := make([]color.Color, k)
-	for i := 0; i < k; i++ {
-		centroids[i] = observations[r.Intn(observationCount)]
-	}
-
-	// Our clusters will be reset on each loop through the algorithm.
+	centroids := initializeCentroids(k, observations)
 	var clusters map[color.Color][]color.Color
 
 	// The algorithm isn't guaranteed to converge, so we put a limit on the
@@ -69,14 +60,46 @@ func Cluster(k int, observations []color.Color, maxIterations int) (map[color.Co
 	return clusterWeights, iterations, nil
 }
 
+func initializeCentroids(k int, observations []color.Color) []color.Color {
+	// Choose k random observations as our initial centroids. Apparently, this
+	// is the "Forgy Method". TODO: Try the Random Partition method?
+	// https://en.wikipedia.org/wiki/K-means_clustering#Initialization_methods
+	//
+	// We take care to track the random indexes we've used to avoid picking the
+	// same observation for multiple centroids in the case len(observations) is
+	// close to k.
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	centroids := make([]color.Color, k)
+	observationCount := len(observations)
+	usedIndexes := make(map[int]bool, k)
+	var index int
+	for i := 0; i < k; i++ {
+		for {
+			index = r.Intn(observationCount)
+			if used, _ := usedIndexes[index]; !used {
+				usedIndexes[index] = true
+				break
+			}
+		}
+		centroids[i] = observations[index]
+	}
+	return centroids
+}
+
 // Find the observation closest to the mean of the given observations.
 //
 // Note: I think this is a departure from the "standard" algorithm, which seems
 // to instead use the actual mean of the given observations (which is likely
 // not actually present in those observations).
 func findCentroid(observations []color.Color) color.Color {
+	center := meanColor(observations)
+	return nearest(center, observations)
+}
+
+// Find the average color in a list of colors.
+func meanColor(colors []color.Color) color.Color {
 	var r, g, b, a, count uint32
-	for _, x := range observations {
+	for _, x := range colors {
 		r1, g1, b1, a1 := x.RGBA()
 		r += r1
 		g += g1
@@ -84,18 +107,17 @@ func findCentroid(observations []color.Color) color.Color {
 		a += a1
 		count++
 	}
-	center := &color.RGBA64{
+	return &color.RGBA64{
 		R: uint16(r / count),
 		G: uint16(g / count),
 		B: uint16(b / count),
 		A: uint16(a / count),
 	}
-	return nearest(center, observations)
 }
 
 // Find the item in the haystack to which the needle is closest.
 func nearest(needle color.Color, haystack []color.Color) color.Color {
-	var minDist uint32
+	var minDist int
 	var result color.Color
 	for i, candidate := range haystack {
 		dist := distance(needle, candidate)
@@ -108,11 +130,11 @@ func nearest(needle color.Color, haystack []color.Color) color.Color {
 }
 
 // Calculate the square of the Euclidean distance between two colors.
-func distance(a, b color.Color) uint32 {
+func distance(a, b color.Color) int {
 	r1, g1, b1, _ := a.RGBA()
 	r2, g2, b2, _ := b.RGBA()
-	dr := r1 - r2
-	dg := g1 - g2
-	db := b1 - b2
+	dr := int(r1) - int(r2)
+	dg := int(g1) - int(g2)
+	db := int(b1) - int(b2)
 	return dr*dr + dg*dg + db*db
 }
