@@ -60,7 +60,7 @@ func TestDistance(t *testing.T) {
 }
 
 func TestNearest(t *testing.T) {
-	var haystack []color.Color = []color.Color{black, white, red, green, blue}
+	var haystack = []color.Color{black, white, red, green, blue}
 
 	if nearest(black, haystack) != black {
 		t.Fatalf("nearest color to self should be self")
@@ -74,7 +74,7 @@ func TestNearest(t *testing.T) {
 }
 
 func TestFindCentroid(t *testing.T) {
-	var cluster []color.Color = []color.Color{black, white, red, mostlyRed}
+	var cluster = []color.Color{black, white, red, mostlyRed}
 	centroid := findCentroid(cluster)
 	found := false
 	for _, c := range cluster {
@@ -88,43 +88,41 @@ func TestFindCentroid(t *testing.T) {
 }
 
 func TestCluster(t *testing.T) {
-	var observations []color.Color = []color.Color{black, white, red}
+	var colors = []color.Color{black, white, red}
 
 	k := 4
-	clusters, iterations, err := Cluster(k, 100, observations)
-	if clusters != nil || iterations != 0 || err == nil {
-		t.Fatalf("too few observations should result in an error")
+	palette, err := ClusterColors(k, 100, colors)
+	if err == nil {
+		t.Fatalf("too few colors should result in an error")
 	}
 
 	k = 3
-	clusters, _, _ = Cluster(k, 100, observations)
-	if len(clusters) != k {
-		t.Fatalf("expected %d clusters, got %d; %v", k, len(clusters), clusters)
+	palette, _ = ClusterColors(k, 100, colors)
+	if palette.Count() != k {
+		t.Fatalf("expected %d clusters, got %d", k, palette.Count())
 	}
 
 	k = 2
-	observations = []color.Color{black, white}
-	clusters, _, _ = Cluster(k, 100, observations)
-	weight, _ := clusters[black]
-	if weight != 0.5 {
+	colors = []color.Color{black, white}
+	palette, _ = ClusterColors(k, 100, colors)
+	if palette.Weight(black) != 0.5 {
 		t.Fatalf("expected weight of black cluster to be 0.5")
 	}
-	weight, _ = clusters[white]
-	if weight != 0.5 {
+	if palette.Weight(white) != 0.5 {
 		t.Fatalf("expected weight of white cluster to be 0.5")
 	}
 }
 
-func BenchmarkCluster(b *testing.B) {
+func BenchmarkClusterColors(b *testing.B) {
 	// We generally expect an input image to have been thumbnailed down to a
 	// manageable size (e.g. 200x200 pixels) before its colors are extracted.
-	observationCount := 200 * 200
-	observations := make([]color.Color, observationCount)
-	for i := 0; i < observationCount; i++ {
-		observations[i] = randomColor()
+	colorCount := 200 * 200
+	colors := make([]color.Color, colorCount)
+	for i := 0; i < colorCount; i++ {
+		colors[i] = randomColor()
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Cluster(4, 100, observations)
+		ClusterColors(4, 100, colors)
 	}
 }

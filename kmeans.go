@@ -7,19 +7,22 @@ import (
 	"time"
 )
 
-// Cluster finds k clusters in the given observations and returns a mapping
-// from cluster centroid to that cluster's "weight" (i.e. its size relative to
-// the total number of observations) in the range [0, 1], along with the number
-// of iterations taken to cluster the observations.
+// ClusterColors finds k clusters in the given colors using the "standard"
+// k-means clustering algorithm. It returns a ColorPalette, after running the
+// algorithm up to maxIterations times.
 //
-// More info: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
-func Cluster(k, maxIterations int, observations []color.Color) (map[color.Color]float64, int, error) {
-	observationCount := len(observations)
-	if observationCount < k {
-		return nil, 0, fmt.Errorf("too few observations for k (%d < %d)", observationCount, k)
+// Note: in terms of the standard algorithm[1], an observation in this
+// implementation is simply a color, and we use the RGB channels as Euclidean
+// coordinates for the purposes of finding the distance between two colors.
+//
+// [1]: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
+func ClusterColors(k, maxIterations int, colors []color.Color) (*ColorPalette, error) {
+	colorCount := len(colors)
+	if colorCount < k {
+		return nil, fmt.Errorf("too few colors for k (%d < %d)", colorCount, k)
 	}
 
-	centroids := initializeCentroids(k, observations)
+	centroids := initializeCentroids(k, colors)
 	var clusters map[color.Color][]color.Color
 
 	// The algorithm isn't guaranteed to converge, so we put a limit on the
@@ -28,8 +31,8 @@ func Cluster(k, maxIterations int, observations []color.Color) (map[color.Color]
 	for iterations = 0; iterations < maxIterations; iterations++ {
 		clusters = make(map[color.Color][]color.Color, k)
 
-		// Assign each observation to the cluster of the closest centroid.
-		for _, x := range observations {
+		// Assign each color to the cluster of the closest centroid.
+		for _, x := range colors {
 			centroid := nearest(x, centroids)
 			clusters[centroid] = append(clusters[centroid], x)
 		}
@@ -55,45 +58,49 @@ func Cluster(k, maxIterations int, observations []color.Color) (map[color.Color]
 
 	clusterWeights := make(map[color.Color]float64, k)
 	for centroid, cluster := range clusters {
-		clusterWeights[centroid] = float64(len(cluster)) / float64(observationCount)
+		clusterWeights[centroid] = float64(len(cluster)) / float64(colorCount)
 	}
-	return clusterWeights, iterations, nil
+	return &ColorPalette{
+		colorWeights: clusterWeights,
+		iterations:   iterations,
+	}, nil
 }
 
-func initializeCentroids(k int, observations []color.Color) []color.Color {
-	// Choose k random observations as our initial centroids. Apparently, this
-	// is the "Forgy Method". TODO: Try the Random Partition method?
+// Generate the initial list of k centroids from the given list of colors.
+func initializeCentroids(k int, colors []color.Color) []color.Color {
+	// We just choose k random items from the list. Apparently, this is the
+	// "Forgy Method". TODO: Try the Random Partition method?
 	// https://en.wikipedia.org/wiki/K-means_clustering#Initialization_methods
 	//
 	// We take care to track the random indexes we've used to avoid picking the
-	// same observation for multiple centroids in the case len(observations) is
+	// same color for multiple centroids in the case len(colors) is
 	// close to k.
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	centroids := make([]color.Color, k)
-	observationCount := len(observations)
+	colorCount := len(colors)
 	usedIndexes := make(map[int]bool, k)
 	var index int
 	for i := 0; i < k; i++ {
 		for {
-			index = r.Intn(observationCount)
+			index = r.Intn(colorCount)
 			if used, _ := usedIndexes[index]; !used {
 				usedIndexes[index] = true
 				break
 			}
 		}
-		centroids[i] = observations[index]
+		centroids[i] = colors[index]
 	}
 	return centroids
 }
 
-// Find the observation closest to the mean of the given observations.
+// Find the color closest to the mean of the given colors.
 //
 // Note: I think this is a departure from the "standard" algorithm, which seems
-// to instead use the actual mean of the given observations (which is likely
-// not actually present in those observations).
-func findCentroid(observations []color.Color) color.Color {
-	center := meanColor(observations)
-	return nearest(center, observations)
+// to instead use the actual mean of the given colors (which is likely
+// not actually present in those colors).
+func findCentroid(colors []color.Color) color.Color {
+	center := meanColor(colors)
+	return nearest(center, colors)
 }
 
 // Find the average color in a list of colors.
