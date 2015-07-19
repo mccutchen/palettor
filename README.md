@@ -2,20 +2,22 @@
 
 Yet another way to extract dominant colors from an image using [k-means clustering][1].
 
+[![Build Status](https://travis-ci.org/mccutchen/palettor.svg?branch=master)](http://travis-ci.org/mccutchen/palettor)
+[![GoDoc](https://godoc.org/github.com/mccutchen/palettor?status.svg)](https://godoc.org/github.com/mccutchen/palettor)
+[![Coverage](http://gocover.io/_badge/github.com/mccutchen/palettor?0)](http://gocover.io/github.com/mccutchen/palettor)
+
 
 ## Tests
 
-[![Build Status](https://travis-ci.org/mccutchen/palettor.svg?branch=master)](http://travis-ci.org/mccutchen/palettor)
-
 ### Unit tests
 
-```bash
+```
 make test
 ```
 
 ### Benchmarks
 
-```bash
+```
 make benchmark
 ```
 
@@ -51,7 +53,7 @@ func main() {
     // after 100 iterations if the clusters have not yet converged.
     k := 3
     maxIterations := 100
-    palette, err := palettor.DominantColors(k, maxIterations, img)
+    palette, err := palettor.FindPalette(k, maxIterations, img)
 
     // Err will only be non-nil if k is larger than the number of pixels in the
     // input image.
@@ -62,8 +64,8 @@ func main() {
     // Palette is a mapping from color to the weight of that color's cluster,
     // which can be used as an approximation for that color's relative
     // dominance
-    for color, weight := range palette {
-        log.Printf("color: %v; weight: %v", color, weight)
+    for _, color := range palette.Colors() {
+        log.Printf("color: %v; weight: %v", color, palette.Weight(color))
     }
 
     // Example output:
