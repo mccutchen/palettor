@@ -44,18 +44,18 @@ func TestDistance(t *testing.T) {
 	// http://golang.org/pkg/image/color/#Color
 	expected := (0xFFFF * 0xFFFF) + (0xFFFF * 0xFFFF) + (0xFFFF * 0xFFFF)
 	if distance(a, b) != expected {
-		t.Fatalf("distance should be square of Euclidean distance; %d != %d", distance(a, b), expected)
+		t.Errorf("distance should be square of Euclidean distance; %d != %d", distance(a, b), expected)
 	}
 
 	a = newColor(0, 0, 0, 0)
 	b = newColor(0, 0, 0, 255)
 	if distance(a, b) != 0 {
-		t.Fatalf("alpha channel is ignored for the purpose of distance")
+		t.Errorf("alpha channel is ignored for the purpose of distance")
 	}
 
 	c := randomColor()
 	if distance(c, c) != 0 {
-		t.Fatalf("distance from between identical colors should be 0")
+		t.Errorf("distance from between identical colors should be 0")
 	}
 }
 
@@ -63,13 +63,13 @@ func TestNearest(t *testing.T) {
 	var haystack = []color.Color{black, white, red, green, blue}
 
 	if nearest(black, haystack) != black {
-		t.Fatalf("nearest color to self should be self")
+		t.Errorf("nearest color to self should be self")
 	}
 	if nearest(darkGray, haystack) != black {
-		t.Fatalf("dark gray should be nearest to black")
+		t.Errorf("dark gray should be nearest to black")
 	}
 	if nearest(mostlyRed, haystack) != red {
-		t.Fatalf("mostly-red should be nearest to red")
+		t.Errorf("mostly-red should be nearest to red")
 	}
 }
 
@@ -83,7 +83,7 @@ func TestFindCentroid(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Fatalf("centroid should be a member of the cluster")
+		t.Errorf("centroid should be a member of the cluster")
 	}
 }
 
@@ -93,23 +93,23 @@ func TestCluster(t *testing.T) {
 	k := 4
 	palette, err := ClusterColors(k, 100, colors)
 	if err == nil {
-		t.Fatalf("too few colors should result in an error")
+		t.Errorf("too few colors should result in an error")
 	}
 
 	k = 3
 	palette, _ = ClusterColors(k, 100, colors)
 	if palette.Count() != k {
-		t.Fatalf("expected %d clusters, got %d", k, palette.Count())
+		t.Errorf("expected %d clusters, got %d", k, palette.Count())
 	}
 
 	k = 2
 	colors = []color.Color{black, white}
 	palette, _ = ClusterColors(k, 100, colors)
 	if palette.Weight(black) != 0.5 {
-		t.Fatalf("expected weight of black cluster to be 0.5")
+		t.Errorf("expected weight of black cluster to be 0.5")
 	}
 	if palette.Weight(white) != 0.5 {
-		t.Fatalf("expected weight of white cluster to be 0.5")
+		t.Errorf("expected weight of white cluster to be 0.5")
 	}
 }
 
