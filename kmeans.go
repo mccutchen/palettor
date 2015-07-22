@@ -40,15 +40,13 @@ func ClusterColors(k, maxIterations int, colors []color.Color) (*ColorPalette, e
 		// Pick new centroids from each cluster. If none of the centroids
 		// change, the clusters have stabilized and we're done.
 		converged := true
-		newCentroids := make([]color.Color, k)
-		j := 0
+		var newCentroids []color.Color
 		for centroid, cluster := range clusters {
 			newCentroid := findCentroid(cluster)
 			if newCentroid != centroid {
 				converged = false
 			}
-			newCentroids[j] = newCentroid
-			j++
+			newCentroids = append(newCentroids, newCentroid)
 		}
 		centroids = newCentroids
 		if converged {
