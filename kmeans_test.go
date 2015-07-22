@@ -111,6 +111,14 @@ func TestCluster(t *testing.T) {
 	if palette.Weight(white) != 0.5 {
 		t.Errorf("expected weight of white cluster to be 0.5")
 	}
+
+	// If there are not enough unique colors to cluster, it's okay for the size
+	// of the extracted palette to be < k
+	k = 3
+	palette, _ = ClusterColors(k, 100, []color.Color{black, black, black, black, black, white})
+	if palette.Count() > 2 {
+		t.Errorf("actual palette can be smaller than k")
+	}
 }
 
 func BenchmarkClusterColors(b *testing.B) {
