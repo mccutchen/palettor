@@ -1,5 +1,5 @@
 benchmark:
-	go test -v -cpu 1,2,4 -race -bench . -benchmem ./...
+	go test -bench . -benchmem ./...
 
 get-deps:
 	go get -u github.com/golang/lint/golint
@@ -7,6 +7,6 @@ get-deps:
 test:
 	golint .
 	go vet .
-	go test -v -cpu 1,2,4 -race ./...
+	go test -v ./...
 
 .PHONY: benchmark get-deps test
