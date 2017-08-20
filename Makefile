@@ -6,4 +6,7 @@ test:
 benchmark:
 	go test -cpu 1,2,4 -race -bench ./... -benchmem ./...
 
-.PHONY: benchmark test
+get-deps:
+	go get -u github.com/golang/lint/golint
+
+.PHONY: test benchmark get-deps
