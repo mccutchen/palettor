@@ -11,6 +11,10 @@ import (
 // a ColorPalette, after running the k-means algorithm up to maxIteration
 // times. See ClusterColors for the actual k-means implementation.
 func FindPalette(k, maxIterations int, img image.Image) (*ColorPalette, error) {
+	return ClusterColors(k, maxIterations, getColors(img))
+}
+
+func getColors(img image.Image) []color.Color {
 	bounds := img.Bounds()
 	pixelCount := (bounds.Max.X - bounds.Min.X) * (bounds.Max.Y - bounds.Min.Y)
 	colors := make([]color.Color, pixelCount)
@@ -21,5 +25,5 @@ func FindPalette(k, maxIterations int, img image.Image) (*ColorPalette, error) {
 			i++
 		}
 	}
-	return ClusterColors(k, maxIterations, colors)
+	return colors
 }

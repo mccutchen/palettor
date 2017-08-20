@@ -1,8 +1,11 @@
 package palettor
 
 import (
+	"image"
 	"image/color"
+	_ "image/jpeg"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 )
@@ -121,14 +124,20 @@ func TestCluster(t *testing.T) {
 	}
 }
 
-func BenchmarkClusterColors(b *testing.B) {
-	// We generally expect an input image to have been thumbnailed down to a
-	// manageable size (e.g. 200x200 pixels) before its colors are extracted.
-	colorCount := 200 * 200
-	colors := make([]color.Color, colorCount)
-	for i := 0; i < colorCount; i++ {
-		colors[i] = randomColor()
+func BenchmarkClusterColors_200x200(b *testing.B) {
+	reader, err := os.Open("testdata/resized.jpg")
+	if err != nil {
+		b.Fatal(err)
 	}
+	defer reader.Close()
+
+	img, _, err := image.Decode(reader)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	colors := getColors(img)
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ClusterColors(4, 100, colors)
