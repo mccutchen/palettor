@@ -53,7 +53,7 @@ func main() {
     // after 100 iterations if the clusters have not yet converged.
     k := 3
     maxIterations := 100
-    palette, err := palettor.FindPalette(k, maxIterations, img)
+    palette, err := palettor.Extract(k, maxIterations, img)
 
     // Err will only be non-nil if k is larger than the number of pixels in the
     // input image.

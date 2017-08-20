@@ -8,7 +8,7 @@ import (
 )
 
 // ClusterColors finds k clusters in the given colors using the "standard"
-// k-means clustering algorithm. It returns a ColorPalette, after running the
+// k-means clustering algorithm. It returns a Palette, after running the
 // algorithm up to maxIterations times.
 //
 // Note: in terms of the standard algorithm[1], an observation in this
@@ -16,7 +16,7 @@ import (
 // coordinates for the purposes of finding the distance between two colors.
 //
 // [1]: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
-func ClusterColors(k, maxIterations int, colors []color.Color) (*ColorPalette, error) {
+func ClusterColors(k, maxIterations int, colors []color.Color) (*Palette, error) {
 	colorCount := len(colors)
 	if colorCount < k {
 		return nil, fmt.Errorf("too few colors for k (%d < %d)", colorCount, k)
@@ -41,9 +41,10 @@ func ClusterColors(k, maxIterations int, colors []color.Color) (*ColorPalette, e
 	for centroid, cluster := range clusters {
 		clusterWeights[centroid] = float64(len(cluster)) / float64(colorCount)
 	}
-	return &ColorPalette{
+	return &Palette{
 		colorWeights: clusterWeights,
 		iterations:   iterations,
+		converged:    converged,
 	}, nil
 }
 

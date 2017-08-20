@@ -5,19 +5,25 @@ import (
 	"testing"
 )
 
-func TestColorPalette(t *testing.T) {
+func TestPalette(t *testing.T) {
 	colorWeights := map[color.Color]float64{
 		black: 0.5,
 		white: 0.5,
 	}
 	iterations := 1
-	palette := &ColorPalette{
+	converged := true
+	palette := &Palette{
 		colorWeights: colorWeights,
+		converged:    converged,
 		iterations:   iterations,
 	}
 
 	if palette.Count() != len(colorWeights) {
 		t.Errorf("wrong number of colors in palette")
+	}
+
+	if palette.Converged() != converged {
+		t.Errorf("wrong value for converged in palette")
 	}
 
 	if palette.Iterations() != iterations {

@@ -7,10 +7,10 @@ import (
 	"image/color"
 )
 
-// FindPalette finds the k most dominant colors in the given image. It returns
-// a ColorPalette, after running the k-means algorithm up to maxIteration
-// times. See ClusterColors for the actual k-means implementation.
-func FindPalette(k, maxIterations int, img image.Image) (*ColorPalette, error) {
+// Extract finds the k most dominant colors in the given image. It returns a
+// Palette, after running the k-means algorithm up to maxIteration times. See
+// ClusterColors for the actual k-means implementation.
+func Extract(k, maxIterations int, img image.Image) (*Palette, error) {
 	return ClusterColors(k, maxIterations, getColors(img))
 }
 
