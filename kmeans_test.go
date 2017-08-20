@@ -22,42 +22,34 @@ var (
 )
 
 func randomColor() color.Color {
+	return newColor(r.Intn(255), r.Intn(255), r.Intn(255), r.Intn(255))
+}
+
+func newColor(r, g, b, a int) color.Color {
 	return &color.RGBA{
-		R: uint8(r.Intn(255)),
-		G: uint8(r.Intn(255)),
-		B: uint8(r.Intn(255)),
-		A: uint8(r.Intn(255)),
+		R: uint8(r),
+		G: uint8(g),
+		B: uint8(b),
+		A: uint8(a),
 	}
 }
 
-func newColor(r, g, b, a uint8) color.Color {
-	return &color.RGBA{
-		R: r,
-		G: g,
-		B: b,
-		A: a,
-	}
-}
-
-func TestDistance(t *testing.T) {
+func TestDistanceSquared(t *testing.T) {
 	a := newColor(0, 0, 0, 0)
 	b := newColor(255, 255, 255, 0)
-	// Distance actually calculated based on uint16 channels, not uint8, due to
-	// the RGBA() method on the Color type:
-	// http://golang.org/pkg/image/color/#Color
 	expected := (0xFFFF * 0xFFFF) + (0xFFFF * 0xFFFF) + (0xFFFF * 0xFFFF)
-	if distance(a, b) != expected {
-		t.Errorf("distance should be square of Euclidean distance; %d != %d", distance(a, b), expected)
+	if distanceSquared(a, b) != expected {
+		t.Errorf("distance should be square of Euclidean distance; %d != %d", distanceSquared(a, b), expected)
 	}
 
 	a = newColor(0, 0, 0, 0)
 	b = newColor(0, 0, 0, 255)
-	if distance(a, b) != 0 {
+	if distanceSquared(a, b) != 0 {
 		t.Errorf("alpha channel is ignored for the purpose of distance")
 	}
 
 	c := randomColor()
-	if distance(c, c) != 0 {
+	if distanceSquared(c, c) != 0 {
 		t.Errorf("distance from between identical colors should be 0")
 	}
 }

@@ -128,7 +128,7 @@ func nearest(needle color.Color, haystack []color.Color) color.Color {
 	var minDist int
 	var result color.Color
 	for i, candidate := range haystack {
-		dist := distance(needle, candidate)
+		dist := distanceSquared(needle, candidate)
 		if i == 0 || dist < minDist {
 			minDist = dist
 			result = candidate
@@ -137,8 +137,9 @@ func nearest(needle color.Color, haystack []color.Color) color.Color {
 	return result
 }
 
-// Calculate the square of the Euclidean distance between two colors.
-func distance(a, b color.Color) int {
+// Calculate the square of the Euclidean distance between two colors, ignoring
+// the alpha channel.
+func distanceSquared(a, b color.Color) int {
 	r1, g1, b1, _ := a.RGBA()
 	r2, g2, b2, _ := b.RGBA()
 	dr := int(r1) - int(r2)
