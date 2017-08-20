@@ -48,19 +48,23 @@ func ClusterColors(k, maxIterations int, colors []color.Color) (*ColorPalette, e
 }
 
 // Generate the initial list of k centroids from the given list of colors.
+//
+// TODO: Try other initialization methods?
+// https://en.wikipedia.org/wiki/K-means_clustering#Initialization_methods
 func initializeStep(k int, colors []color.Color) []color.Color {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	centroids := make([]color.Color, k)
 	colorCount := len(colors)
+
 	// Track random indexes we've used to avoid picking the same index for
 	// multiple centroids in the case len(colors) is close to k.
-	usedIndexes := make(map[int]bool, k)
+	usedIndexes := make(map[int]struct{}, k)
 	var index int
 	for i := 0; i < k; i++ {
 		for {
 			index = r.Intn(colorCount)
-			if used, _ := usedIndexes[index]; !used {
-				usedIndexes[index] = true
+			if _, used := usedIndexes[index]; !used {
+				usedIndexes[index] = struct{}{}
 				break
 			}
 		}
@@ -106,15 +110,15 @@ func findCentroid(colors []color.Color) color.Color {
 
 // Find the average color in a list of colors.
 func meanColor(colors []color.Color) color.Color {
-	var r, g, b, a, count uint32
+	var r, g, b, a uint32
 	for _, x := range colors {
 		r1, g1, b1, a1 := x.RGBA()
 		r += r1
 		g += g1
 		b += b1
 		a += a1
-		count++
 	}
+	count := uint32(len(colors))
 	return &color.RGBA64{
 		R: uint16(r / count),
 		G: uint16(g / count),

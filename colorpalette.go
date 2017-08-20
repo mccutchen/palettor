@@ -12,11 +12,9 @@ type ColorPalette struct {
 
 // Colors returns the colors in a color palette.
 func (p *ColorPalette) Colors() []color.Color {
-	colors := make([]color.Color, len(p.colorWeights))
-	i := 0
+	var colors []color.Color
 	for color := range p.colorWeights {
-		colors[i] = color
-		i++
+		colors = append(colors, color)
 	}
 	return colors
 }
