@@ -61,8 +61,7 @@ func (p *Palette) Iterations() int {
 // Weight returns the weight of a color in a Palette as a float in the range
 // [0, 1], or 0 if a given color is not found.
 func (p *Palette) Weight(c color.Color) float64 {
-	weight, _ := p.colorWeights[c]
-	return weight
+	return p.colorWeights[c]
 }
 
 // implement sort.Interface

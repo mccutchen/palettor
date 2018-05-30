@@ -9,4 +9,8 @@ benchmark:
 get-deps:
 	go get -u github.com/golang/lint/golint
 
+app:
+	mkdir -p dist
+	go build -o dist/palettor cmd/palettor/palettor.go
+
 .PHONY: test benchmark get-deps

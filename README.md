@@ -22,7 +22,11 @@ make benchmark
 ```
 
 
-## Example
+## Usage as a library
+
+```
+go get -u github.com/mccutchen/palettor
+```
 
 ```go
 package main
@@ -73,6 +77,57 @@ func main() {
     // 2015/07/19 10:27:52 color: {140 103 150}; weight: 0.39558035714285716
     // 2015/07/19 10:27:52 color: {189 144 118}; weight: 0.42959821428571426
 }
+```
+
+## The `palettor` command line application
+
+An example command line application is provided, which reads an input image and
+either a) overlays the dominant palette on the bottom of the image or b)
+generates a JSON representation of the dominant color palette:
+
+```
+$ go get -u github.com/mccutchen/palettor/cmd/palettor
+
+$ palettor -help
+Usage: palettor [OPTIONS] [INPUT]
+
+  -json
+        Output color palette in JSON format
+  -k int
+        Palette size (default 3)
+  -max int
+        Maximum k-means iterations (default 500)
+
+$ cat /Library/Desktop\ Pictures/Beach.jpg | palettor -json | jq .
+[
+  {
+    "color": {
+      "R": 70,
+      "G": 134,
+      "B": 154,
+      "A": 255
+    },
+    "weight": 0.19080357142857143
+  },
+  {
+    "color": {
+      "R": 175,
+      "G": 187,
+      "B": 183,
+      "A": 255
+    },
+    "weight": 0.26852678571428573
+  },
+  {
+    "color": {
+      "R": 210,
+      "G": 208,
+      "B": 199,
+      "A": 255
+    },
+    "weight": 0.5406696428571428
+  }
+]
 ```
 
 
