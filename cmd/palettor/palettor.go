@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
-	_ "image/gif"
-	_ "image/jpeg"
+	"image/gif"
+	"image/jpeg"
 	"image/png"
 	"io"
 	"log"
@@ -44,7 +44,7 @@ func main() {
 		}
 	}
 
-	img, err := loadImage(input)
+	img, format, err := loadImage(input)
 	if err != nil {
 		log.Fatalf("Error decoding image: %s", err)
 	}
@@ -64,13 +64,13 @@ func main() {
 		return
 	}
 
-	drawPalette(os.Stdout, img, palette)
+	drawPalette(os.Stdout, img, palette, format)
 }
 
-func loadImage(src io.Reader) (image.Image, error) {
-	img, _, err := image.Decode(src)
+func loadImage(src io.Reader) (image.Image, string, error) {
+	img, format, err := image.Decode(src)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Ensure we're working with RGBA data, which is necessary to a) have more
@@ -87,11 +87,11 @@ func loadImage(src io.Reader) (image.Image, error) {
 		img = img2
 	}
 
-	return img, nil
+	return img, format, nil
 }
 
 // Draw a palette over the bottom 10% of an image
-func drawPalette(dst io.Writer, img image.Image, palette *palettor.Palette) {
+func drawPalette(dst io.Writer, img image.Image, palette *palettor.Palette, format string) {
 	drawImg := img.(draw.Image)
 
 	imgWidth := img.Bounds().Dx()
@@ -108,5 +108,12 @@ func drawPalette(dst io.Writer, img image.Image, palette *palettor.Palette) {
 		xOffset += colorWidth
 	}
 
-	png.Encode(dst, drawImg)
+	switch format {
+	case "jpeg":
+		jpeg.Encode(dst, drawImg, nil)
+	case "gif":
+		gif.Encode(dst, drawImg, nil)
+	default:
+		png.Encode(dst, drawImg)
+	}
 }
