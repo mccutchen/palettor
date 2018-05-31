@@ -2,6 +2,7 @@ package palettor
 
 import (
 	"image/color"
+	"sort"
 )
 
 // A Palette represents the dominant colors extracted from an image, as a
@@ -11,6 +12,24 @@ type Palette struct {
 	colorWeights map[color.Color]float64
 	converged    bool
 	iterations   int
+}
+
+// Entry is a color and its weight in a Palette
+type Entry struct {
+	Color  color.Color `json:"color"`
+	Weight float64     `json:"weight"`
+}
+
+// Entries returns a slice of Entry structs, sorted by weight
+func (p *Palette) Entries() []Entry {
+	entries := make([]Entry, p.Count())
+	i := 0
+	for color, weight := range p.colorWeights {
+		entries[i] = Entry{color, weight}
+		i++
+	}
+	sort.Sort(byWeight(entries))
+	return entries
 }
 
 // Colors returns a slice of the colors that comprise a Palette.
@@ -45,3 +64,10 @@ func (p *Palette) Weight(c color.Color) float64 {
 	weight, _ := p.colorWeights[c]
 	return weight
 }
+
+// implement sort.Interface
+type byWeight []Entry
+
+func (a byWeight) Len() int           { return len(a) }
+func (a byWeight) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byWeight) Less(i, j int) bool { return a[i].Weight < a[j].Weight }

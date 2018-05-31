@@ -2,13 +2,14 @@ package palettor
 
 import (
 	"image/color"
+	"reflect"
 	"testing"
 )
 
 func TestPalette(t *testing.T) {
 	colorWeights := map[color.Color]float64{
-		black: 0.5,
-		white: 0.5,
+		black: 0.75,
+		white: 0.25,
 	}
 	iterations := 1
 	converged := true
@@ -30,7 +31,7 @@ func TestPalette(t *testing.T) {
 		t.Errorf("wrong number of iterations in palette")
 	}
 
-	if palette.Weight(black) != 0.5 {
+	if palette.Weight(black) != 0.75 {
 		t.Errorf("wrong weight for black")
 	}
 	if palette.Weight(red) != 0 {
@@ -48,5 +49,14 @@ func TestPalette(t *testing.T) {
 		if !found {
 			t.Errorf("missing color %v from palette", color)
 		}
+	}
+
+	// ensure entries are sorted by weight
+	expectedEntries := []Entry{
+		{white, 0.25},
+		{black, 0.75},
+	}
+	if entries := palette.Entries(); !reflect.DeepEqual(entries, expectedEntries) {
+		t.Errorf("expected entries %v, got %v", expectedEntries, entries)
 	}
 }
