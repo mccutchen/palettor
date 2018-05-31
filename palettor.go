@@ -7,11 +7,11 @@ import (
 	"image/color"
 )
 
-// Extract finds the k most dominant colors in the given image. It returns a
-// Palette, after running the k-means algorithm up to maxIteration times. See
-// ClusterColors for the actual k-means implementation.
+// Extract finds the k most dominant colors in the given image using the
+// "standard" k-means clustering algorithm. It returns a Palette, after running
+// the algorithm up to maxIterations times.
 func Extract(k, maxIterations int, img image.Image) (*Palette, error) {
-	return ClusterColors(k, maxIterations, getColors(img))
+	return clusterColors(k, maxIterations, getColors(img))
 }
 
 func getColors(img image.Image) []color.Color {

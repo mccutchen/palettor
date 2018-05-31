@@ -86,20 +86,20 @@ func TestCluster(t *testing.T) {
 	var colors = []color.Color{black, white, red}
 
 	k := 4
-	palette, err := ClusterColors(k, 100, colors)
+	palette, err := clusterColors(k, 100, colors)
 	if err == nil {
 		t.Errorf("too few colors should result in an error")
 	}
 
 	k = 3
-	palette, _ = ClusterColors(k, 100, colors)
+	palette, _ = clusterColors(k, 100, colors)
 	if palette.Count() != k {
 		t.Errorf("expected %d clusters, got %d", k, palette.Count())
 	}
 
 	k = 2
 	colors = []color.Color{black, white}
-	palette, _ = ClusterColors(k, 100, colors)
+	palette, _ = clusterColors(k, 100, colors)
 	if palette.Weight(black) != 0.5 {
 		t.Errorf("expected weight of black cluster to be 0.5")
 	}
@@ -110,13 +110,13 @@ func TestCluster(t *testing.T) {
 	// If there are not enough unique colors to cluster, it's okay for the size
 	// of the extracted palette to be < k
 	k = 3
-	palette, _ = ClusterColors(k, 100, []color.Color{black, black, black, black, black, white})
+	palette, _ = clusterColors(k, 100, []color.Color{black, black, black, black, black, white})
 	if palette.Count() > 2 {
 		t.Errorf("actual palette can be smaller than k")
 	}
 }
 
-func BenchmarkClusterColors_200x200(b *testing.B) {
+func BenchmarkClusterColors200x200(b *testing.B) {
 	reader, err := os.Open("testdata/resized.jpg")
 	if err != nil {
 		b.Fatal(err)
@@ -132,6 +132,6 @@ func BenchmarkClusterColors_200x200(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ClusterColors(4, 100, colors)
+		clusterColors(4, 100, colors)
 	}
 }

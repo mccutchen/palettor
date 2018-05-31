@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// ClusterColors finds k clusters in the given colors using the "standard"
+// clusterColors finds k clusters in the given colors using the "standard"
 // k-means clustering algorithm. It returns a Palette, after running the
 // algorithm up to maxIterations times.
 //
@@ -16,7 +16,7 @@ import (
 // coordinates for the purposes of finding the distance between two colors.
 //
 // [1]: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
-func ClusterColors(k, maxIterations int, colors []color.Color) (*Palette, error) {
+func clusterColors(k, maxIterations int, colors []color.Color) (*Palette, error) {
 	colorCount := len(colors)
 	if colorCount < k {
 		return nil, fmt.Errorf("too few colors for k (%d < %d)", colorCount, k)
