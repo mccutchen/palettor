@@ -64,7 +64,9 @@ func main() {
 		return
 	}
 
-	drawPalette(os.Stdout, img, palette, format)
+	if err := drawPalette(os.Stdout, img, palette, format); err != nil {
+		log.Fatalf("Error encoding palette: %s", err)
+	}
 }
 
 func loadImage(src io.Reader) (image.Image, string, error) {
@@ -83,7 +85,7 @@ func loadImage(src io.Reader) (image.Image, string, error) {
 	// https://stackoverflow.com/a/47539710/151221
 	if _, ok := img.(*image.RGBA); !ok {
 		img2 := image.NewRGBA(img.Bounds())
-		draw.Draw(img2, img2.Bounds(), img, image.ZP, draw.Src)
+		draw.Draw(img2, img2.Bounds(), img, image.Point{}, draw.Src)
 		img = img2
 	}
 
@@ -91,7 +93,7 @@ func loadImage(src io.Reader) (image.Image, string, error) {
 }
 
 // Draw a palette over the bottom 10% of an image
-func drawPalette(dst io.Writer, img image.Image, palette *palettor.Palette, format string) {
+func drawPalette(dst io.Writer, img image.Image, palette *palettor.Palette, format string) error {
 	drawImg := img.(draw.Image)
 
 	imgWidth := img.Bounds().Dx()
@@ -104,16 +106,16 @@ func drawPalette(dst io.Writer, img image.Image, palette *palettor.Palette, form
 	for _, entry := range palette.Entries() {
 		colorWidth := int(math.Ceil(float64(imgWidth) * entry.Weight))
 		bounds := image.Rect(xOffset, yOffset, xOffset+colorWidth, yOffset+paletteHeight)
-		draw.Draw(drawImg, bounds, &image.Uniform{entry.Color}, image.ZP, draw.Src)
+		draw.Draw(drawImg, bounds, &image.Uniform{entry.Color}, image.Point{}, draw.Src)
 		xOffset += colorWidth
 	}
 
 	switch format {
 	case "jpeg":
-		jpeg.Encode(dst, drawImg, nil)
+		return jpeg.Encode(dst, drawImg, nil)
 	case "gif":
-		gif.Encode(dst, drawImg, nil)
+		return gif.Encode(dst, drawImg, nil)
 	default:
-		png.Encode(dst, drawImg)
+		return png.Encode(dst, drawImg)
 	}
 }
