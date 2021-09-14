@@ -2,9 +2,10 @@
 
 Yet another way to extract dominant colors from an image using [k-means clustering][1].
 
-[![Build Status](https://travis-ci.org/mccutchen/palettor.svg?branch=master)](http://travis-ci.org/mccutchen/palettor)
-[![GoDoc](https://godoc.org/github.com/mccutchen/palettor?status.svg)](https://godoc.org/github.com/mccutchen/palettor)
-[![Coverage](http://gocover.io/_badge/github.com/mccutchen/palettor?0)](http://gocover.io/github.com/mccutchen/palettor)
+[![Documentation](https://pkg.go.dev/badge/github.com/mccutchen/palettor)](https://pkg.go.dev/github.com/mccutchen/palettor)
+[![Build status](https://github.com/mccutchen/palettor/actions/workflows/test.yaml/badge.svg)](https://github.com/mccutchen/palettor/actions/workflows/test.yaml)
+[![Code coverage](https://codecov.io/gh/mccutchen/palettor/branch/main/graph/badge.svg)](https://codecov.io/gh/mccutchen/palettor)
+[![Go report card](http://goreportcard.com/badge/github.com/mccutchen/palettor)](https://goreportcard.com/report/github.com/mccutchen/palettor)
 
 
 ## Tests
