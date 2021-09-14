@@ -86,13 +86,16 @@ func TestCluster(t *testing.T) {
 	var colors = []color.Color{black, white, red}
 
 	k := 4
-	palette, err := clusterColors(k, 100, colors)
+	_, err := clusterColors(k, 100, colors)
 	if err == nil {
 		t.Errorf("too few colors should result in an error")
 	}
 
 	k = 3
-	palette, _ = clusterColors(k, 100, colors)
+	palette, err := clusterColors(k, 100, colors)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 	if palette.Count() != k {
 		t.Errorf("expected %d clusters, got %d", k, palette.Count())
 	}
@@ -132,6 +135,8 @@ func BenchmarkClusterColors200x200(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		clusterColors(4, 100, colors)
+		if _, err := clusterColors(4, 100, colors); err != nil {
+			b.Error(err)
+		}
 	}
 }
