@@ -1,3 +1,6 @@
+# Built binaries will be placed here
+DIST_PATH  	  ?= dist
+
 # Default flags used by the test, testci, testcover targets
 COVERAGE_PATH ?= coverage.out
 COVERAGE_ARGS ?= -covermode=atomic -coverprofile=$(COVERAGE_PATH)
@@ -8,6 +11,17 @@ TOOL_BIN_DIR     ?= $(shell go env GOPATH)/bin
 TOOL_GOLINT      := $(TOOL_BIN_DIR)/golint
 TOOL_STATICCHECK := $(TOOL_BIN_DIR)/staticcheck
 
+# =============================================================================
+# build
+# =============================================================================
+build:
+	mkdir -p $(DIST_PATH)
+	CGO_ENABLED=0 go build -ldflags="-s -w" -o $(DIST_PATH)/palettor ./cmd/palettor
+.PHONY: build
+
+# =============================================================================
+# test & lint
+# =============================================================================
 test:
 	go test $(TEST_ARGS) ./...
 .PHONY: test
@@ -31,9 +45,14 @@ lint: $(TOOL_GOLINT) $(TOOL_STATICCHECK)
 .PHONY: lint
 
 clean:
-	rm -rf $(COVERAGE_PATH)
+	rm -rf $(COVERAGE_PATH) $(DIST_PATH)
 .PHONY: clean
 
+# =============================================================================
+# dependencies
+#
+# Deps are installed outside of working dir to avoid polluting go modules
+# =============================================================================
 $(TOOL_GOLINT):
 	cd /tmp && go get -u golang.org/x/lint/golint
 
