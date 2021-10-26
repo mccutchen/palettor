@@ -79,7 +79,13 @@ func assignmentStep(centroids, colors []color.Color) map[color.Color][]color.Col
 	clusters := make(map[color.Color][]color.Color)
 	for _, x := range colors {
 		centroid := nearest(x, centroids)
-		clusters[centroid] = append(clusters[centroid], x)
+		cluster, found := clusters[centroid]
+		if !found {
+			// allocate slice w/ maximum possible capacity to avoid possible
+			// allocations per-append below
+			cluster = make([]color.Color, 0, len(colors))
+		}
+		clusters[centroid] = append(cluster, x)
 	}
 	return clusters
 }
@@ -88,7 +94,7 @@ func assignmentStep(centroids, colors []color.Color) map[color.Color][]color.Col
 // clusters have stabilized and the algorithm has converged.
 func updateStep(clusters map[color.Color][]color.Color) (bool, []color.Color) {
 	converged := true
-	var newCentroids []color.Color
+	newCentroids := make([]color.Color, 0, len(clusters))
 	for centroid, cluster := range clusters {
 		newCentroid := findCentroid(cluster)
 		if newCentroid != centroid {
