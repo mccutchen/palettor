@@ -16,6 +16,7 @@ import (
 
 	"github.com/mccutchen/palettor"
 	"github.com/nfnt/resize"
+	"github.com/pkg/profile"
 )
 
 func main() {
@@ -23,6 +24,8 @@ func main() {
 		k          = flag.Int("k", 3, "Palette size")
 		maxIters   = flag.Int("max", 500, "Maximum k-means iterations")
 		jsonOutput = flag.Bool("json", false, "Output color palette in JSON format")
+		noResize   = flag.Bool("no-resize", false, "Do not resize input image before processing")
+		doProfile  = flag.Bool("profile", false, "Capture profile")
 	)
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [INPUT]\n\n", os.Args[0])
@@ -50,9 +53,16 @@ func main() {
 	}
 
 	// Get the image down to a more manageable size
-	thumb := resize.Thumbnail(200, 200, img, resize.NearestNeighbor)
+	if !*noResize {
+		img = resize.Thumbnail(200, 200, img, resize.NearestNeighbor)
+	}
 
-	palette, err := palettor.Extract(*k, *maxIters, thumb)
+	// Only start profiling after the image is loaded
+	if *doProfile {
+		defer profile.Start().Stop()
+	}
+
+	palette, err := palettor.Extract(*k, *maxIters, img)
 	if err != nil {
 		log.Fatalf("Error extracing color palette: %s", err)
 	}
