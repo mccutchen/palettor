@@ -1,31 +1,50 @@
 package palettor
 
 import (
+	"encoding/json"
 	"image/color"
 	"sort"
+
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 // A Palette represents the dominant colors extracted from an image, as a
 // mapping from color to the weight of that color's cluster. The weight can be
 // used as an approximation for that color's relative dominance in an image.
 type Palette struct {
-	colorWeights map[color.Color]float64
+	colorWeights map[colorful.Color]float64
 	converged    bool
 	iterations   int
 }
 
 // Entry is a color and its weight in a Palette
 type Entry struct {
-	Color  color.Color `json:"color"`
-	Weight float64     `json:"weight"`
+	Color  colorful.Color `json:"color"`
+	Weight float64        `json:"weight"`
+}
+
+// MarshalJSON turns e into a more usefully readable JSON structure, with a hex
+// value and RGB values in the 0-255 interval.
+func (e Entry) MarshalJSON() ([]byte, error) {
+	type Alias Entry
+	r, g, b := e.Color.RGB255()
+	return json.Marshal(&struct {
+		Color color.RGBA `json:"color"`
+		Hex   string     `json:"hex"`
+		Alias
+	}{
+		Color: color.RGBA{r, g, b, 255},
+		Hex:   e.Color.Hex(),
+		Alias: (Alias)(e),
+	})
 }
 
 // Entries returns a slice of Entry structs, sorted by weight
 func (p *Palette) Entries() []Entry {
 	entries := make([]Entry, p.Count())
 	i := 0
-	for color, weight := range p.colorWeights {
-		entries[i] = Entry{color, weight}
+	for c, weight := range p.colorWeights {
+		entries[i] = Entry{c, weight}
 		i++
 	}
 	sort.Sort(byWeight(entries))
@@ -33,8 +52,8 @@ func (p *Palette) Entries() []Entry {
 }
 
 // Colors returns a slice of the colors that comprise a Palette.
-func (p *Palette) Colors() []color.Color {
-	var colors []color.Color
+func (p *Palette) Colors() []colorful.Color {
+	var colors []colorful.Color
 	for color := range p.colorWeights {
 		colors = append(colors, color)
 	}
@@ -60,7 +79,7 @@ func (p *Palette) Iterations() int {
 
 // Weight returns the weight of a color in a Palette as a float in the range
 // [0, 1], or 0 if a given color is not found.
-func (p *Palette) Weight(c color.Color) float64 {
+func (p *Palette) Weight(c colorful.Color) float64 {
 	return p.colorWeights[c]
 }
 

@@ -2,9 +2,10 @@ package palettor
 
 import (
 	"fmt"
-	"image/color"
 	"math/rand"
 	"time"
+
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 // clusterColors finds k clusters in the given colors using the "standard"
@@ -16,14 +17,14 @@ import (
 // coordinates for the purposes of finding the distance between two colors.
 //
 // [1]: https://en.wikipedia.org/wiki/K-means_clustering#Standard_algorithm
-func clusterColors(k, maxIterations int, colors []color.Color) (*Palette, error) {
+func clusterColors(k, maxIterations int, colors []colorful.Color) (*Palette, error) {
 	colorCount := len(colors)
 	if colorCount < k {
 		return nil, fmt.Errorf("too few colors for k (%d < %d)", colorCount, k)
 	}
 
 	centroids := initializeStep(k, colors)
-	var clusters map[color.Color][]color.Color
+	var clusters map[colorful.Color][]colorful.Color
 	var converged bool
 
 	// The algorithm isn't guaranteed to converge, so we put a limit on the
@@ -37,7 +38,7 @@ func clusterColors(k, maxIterations int, colors []color.Color) (*Palette, error)
 		}
 	}
 
-	clusterWeights := make(map[color.Color]float64, k)
+	clusterWeights := make(map[colorful.Color]float64, k)
 	for centroid, cluster := range clusters {
 		clusterWeights[centroid] = float64(len(cluster)) / float64(colorCount)
 	}
@@ -52,9 +53,9 @@ func clusterColors(k, maxIterations int, colors []color.Color) (*Palette, error)
 //
 // TODO: Try other initialization methods?
 // https://en.wikipedia.org/wiki/K-means_clustering#Initialization_methods
-func initializeStep(k int, colors []color.Color) []color.Color {
+func initializeStep(k int, colors []colorful.Color) []colorful.Color {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	centroids := make([]color.Color, k)
+	centroids := make([]colorful.Color, k)
 	colorCount := len(colors)
 
 	// Track random indexes we've used to avoid picking the same index for
@@ -75,15 +76,15 @@ func initializeStep(k int, colors []color.Color) []color.Color {
 }
 
 // Assign each color to the cluster of the closest centroid.
-func assignmentStep(centroids, colors []color.Color) map[color.Color][]color.Color {
-	clusters := make(map[color.Color][]color.Color)
+func assignmentStep(centroids, colors []colorful.Color) map[colorful.Color][]colorful.Color {
+	clusters := make(map[colorful.Color][]colorful.Color)
 	for _, x := range colors {
 		centroid := nearest(x, centroids)
 		cluster, found := clusters[centroid]
 		if !found {
 			// allocate slice w/ maximum possible capacity to avoid possible
 			// allocations per-append below
-			cluster = make([]color.Color, 0, len(colors))
+			cluster = make([]colorful.Color, 0, len(colors))
 		}
 		clusters[centroid] = append(cluster, x)
 	}
@@ -92,9 +93,9 @@ func assignmentStep(centroids, colors []color.Color) map[color.Color][]color.Col
 
 // Pick new centroids from each cluster. If none of the centroids change, the
 // clusters have stabilized and the algorithm has converged.
-func updateStep(clusters map[color.Color][]color.Color) (bool, []color.Color) {
+func updateStep(clusters map[colorful.Color][]colorful.Color) (bool, []colorful.Color) {
 	converged := true
-	newCentroids := make([]color.Color, 0, len(clusters))
+	newCentroids := make([]colorful.Color, 0, len(clusters))
 	for centroid, cluster := range clusters {
 		newCentroid := findCentroid(cluster)
 		if newCentroid != centroid {
@@ -110,34 +111,28 @@ func updateStep(clusters map[color.Color][]color.Color) (bool, []color.Color) {
 // Note: I think this is a departure from the "standard" algorithm, which seems
 // to instead use the actual mean of the given colors (which is likely
 // not actually present in those colors).
-func findCentroid(colors []color.Color) color.Color {
+func findCentroid(colors []colorful.Color) colorful.Color {
 	center := meanColor(colors)
 	return nearest(center, colors)
 }
 
 // Find the average color in a list of colors.
-func meanColor(colors []color.Color) color.Color {
-	var r, g, b, a uint32
-	for _, x := range colors {
-		r1, g1, b1, a1 := x.RGBA()
-		r += r1
-		g += g1
-		b += b1
-		a += a1
+func meanColor(colors []colorful.Color) colorful.Color {
+	var h, c, l float64
+	for _, color := range colors {
+		h1, c1, l1 := color.Hcl()
+		h += h1
+		c += c1
+		l += l1
 	}
-	count := uint32(len(colors))
-	return &color.RGBA64{
-		R: uint16(r / count),
-		G: uint16(g / count),
-		B: uint16(b / count),
-		A: uint16(a / count),
-	}
+	count := float64(len(colors))
+	return colorful.Hcl(h/count, c/count, l/count)
 }
 
 // Find the item in the haystack to which the needle is closest.
-func nearest(needle color.Color, haystack []color.Color) color.Color {
-	var minDist int
-	var result color.Color
+func nearest(needle colorful.Color, haystack []colorful.Color) colorful.Color {
+	var minDist float64
+	var result colorful.Color
 	for i, candidate := range haystack {
 		dist := distanceSquared(needle, candidate)
 		if i == 0 || dist < minDist {
@@ -150,11 +145,15 @@ func nearest(needle color.Color, haystack []color.Color) color.Color {
 
 // Calculate the square of the Euclidean distance between two colors, ignoring
 // the alpha channel.
-func distanceSquared(a, b color.Color) int {
-	r1, g1, b1, _ := a.RGBA()
-	r2, g2, b2, _ := b.RGBA()
-	dr := int(r1) - int(r2)
-	dg := int(g1) - int(g2)
-	db := int(b1) - int(b2)
-	return dr*dr + dg*dg + db*db
+func distanceSquared(a, b colorful.Color) float64 {
+
+	// NOTE: is this really a decent HCL distance? H-values cover a much greater
+	// range than C and L values.
+	h1, c1, l1 := a.Hcl()
+	h2, c2, l2 := b.Hcl()
+
+	dh := h1 - h2
+	dc := c1 - c2
+	dl := l1 - l2
+	return dh*dh + dc*dc + dl*dl
 }

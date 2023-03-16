@@ -68,6 +68,8 @@ func main() {
 	}
 
 	if *jsonOutput {
+		// FIXME: exposes the inner implementation. Convert the colors to hex range.
+
 		if err := json.NewEncoder(os.Stdout).Encode(palette.Entries()); err != nil {
 			log.Fatalf("Error encoding JSON: %s", err)
 		}

@@ -8,54 +8,57 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/lucasb-eyer/go-colorful"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
 	r         = rand.New(rand.NewSource(time.Now().UnixNano()))
-	black     = newColor(0, 0, 0, 0)
-	white     = newColor(255, 255, 255, 0)
-	red       = newColor(255, 0, 0, 0)
-	green     = newColor(0, 255, 0, 0)
-	blue      = newColor(0, 0, 255, 0)
-	darkGray  = newColor(1, 1, 1, 0)
-	mostlyRed = newColor(200, 0, 0, 0)
+	black     = newColor(0, 0, 0, 255)
+	white     = newColor(255, 255, 255, 255)
+	red       = newColor(255, 0, 0, 255)
+	green     = newColor(0, 255, 0, 255)
+	blue      = newColor(0, 0, 255, 255)
+	darkGray  = newColor(1, 1, 1, 255)
+	mostlyRed = newColor(200, 0, 0, 255)
 )
 
-func randomColor() color.Color {
-	return newColor(r.Intn(255), r.Intn(255), r.Intn(255), r.Intn(255))
+func randomColor() colorful.Color {
+	return colorful.Hcl(r.Float64()*360, r.Float64(), r.Float64())
 }
 
-func newColor(r, g, b, a int) color.Color {
-	return &color.RGBA{
+func newColor(r, g, b, a int) colorful.Color {
+	// Bodge: keep constants.
+	color, ok := colorful.MakeColor(&color.RGBA{
 		R: uint8(r),
 		G: uint8(g),
 		B: uint8(b),
 		A: uint8(a),
+	})
+	if !ok {
+		panic("Color fixtures must have nonzero A-channel")
 	}
+
+	return color
 }
 
 func TestDistanceSquared(t *testing.T) {
-	a := newColor(0, 0, 0, 0)
-	b := newColor(255, 255, 255, 0)
-	expected := (0xFFFF * 0xFFFF) + (0xFFFF * 0xFFFF) + (0xFFFF * 0xFFFF)
-	if distanceSquared(a, b) != expected {
-		t.Errorf("distance should be square of Euclidean distance; %d != %d", distanceSquared(a, b), expected)
-	}
+	a := newColor(0, 0, 0, 255)
+	b := newColor(255, 255, 255, 255)
 
-	a = newColor(0, 0, 0, 0)
+	assert.InDelta(t, 1, distanceSquared(a, b), .0001, "distance should be square of Euclidean distance")
+
+	a = newColor(0, 0, 0, 1)
 	b = newColor(0, 0, 0, 255)
-	if distanceSquared(a, b) != 0 {
-		t.Errorf("alpha channel is ignored for the purpose of distance")
-	}
+	assert.Equal(t, 0.00, distanceSquared(a, b), "alpha channel should be ignored for the purpose of distance")
 
 	c := randomColor()
-	if distanceSquared(c, c) != 0 {
-		t.Errorf("distance from between identical colors should be 0")
-	}
+	assert.Equal(t, 0.00, distanceSquared(c, c), "distance from between identical colors should be 0")
 }
 
 func TestNearest(t *testing.T) {
-	var haystack = []color.Color{black, white, red, green, blue}
+	var haystack = []colorful.Color{black, white, red, green, blue}
 
 	if nearest(black, haystack) != black {
 		t.Errorf("nearest color to self should be self")
@@ -69,7 +72,7 @@ func TestNearest(t *testing.T) {
 }
 
 func TestFindCentroid(t *testing.T) {
-	var cluster = []color.Color{black, white, red, mostlyRed}
+	var cluster = []colorful.Color{black, white, red, mostlyRed}
 	centroid := findCentroid(cluster)
 	found := false
 	for _, c := range cluster {
@@ -83,7 +86,7 @@ func TestFindCentroid(t *testing.T) {
 }
 
 func TestCluster(t *testing.T) {
-	var colors = []color.Color{black, white, red}
+	var colors = []colorful.Color{black, white, red}
 
 	k := 4
 	_, err := clusterColors(k, 100, colors)
@@ -101,7 +104,7 @@ func TestCluster(t *testing.T) {
 	}
 
 	k = 2
-	colors = []color.Color{black, white}
+	colors = []colorful.Color{black, white}
 	palette, _ = clusterColors(k, 100, colors)
 	if palette.Weight(black) != 0.5 {
 		t.Errorf("expected weight of black cluster to be 0.5")
@@ -113,7 +116,7 @@ func TestCluster(t *testing.T) {
 	// If there are not enough unique colors to cluster, it's okay for the size
 	// of the extracted palette to be < k
 	k = 3
-	palette, _ = clusterColors(k, 100, []color.Color{black, black, black, black, black, white})
+	palette, _ = clusterColors(k, 100, []colorful.Color{black, black, black, black, black, white})
 	if palette.Count() > 2 {
 		t.Errorf("actual palette can be smaller than k")
 	}
@@ -131,7 +134,10 @@ func BenchmarkClusterColors200x200(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	colors := getColors(img)
+	colors, err := getColors(img)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

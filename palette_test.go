@@ -1,16 +1,19 @@
 package palettor
 
 import (
-	"image/color"
 	"reflect"
 	"testing"
+
+	"github.com/lucasb-eyer/go-colorful"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPalette(t *testing.T) {
-	colorWeights := map[color.Color]float64{
+	colorWeights := map[colorful.Color]float64{
 		black: 0.75,
 		white: 0.25,
 	}
+
 	iterations := 1
 	converged := true
 	palette := &Palette{
@@ -19,24 +22,12 @@ func TestPalette(t *testing.T) {
 		iterations:   iterations,
 	}
 
-	if palette.Count() != len(colorWeights) {
-		t.Errorf("wrong number of colors in palette")
-	}
+	assert.Equal(t, len(colorWeights), palette.Count())
+	assert.Equal(t, converged, palette.Converged())
+	assert.Equal(t, iterations, palette.Iterations())
 
-	if palette.Converged() != converged {
-		t.Errorf("wrong value for converged in palette")
-	}
-
-	if palette.Iterations() != iterations {
-		t.Errorf("wrong number of iterations in palette")
-	}
-
-	if palette.Weight(black) != 0.75 {
-		t.Errorf("wrong weight for black")
-	}
-	if palette.Weight(red) != 0 {
-		t.Errorf("wrong weight for unknown color")
-	}
+	assert.Equal(t, 0.75, palette.Weight(black), "wrong weight for black")
+	assert.Equal(t, 0.00, palette.Weight(red), "wrong weight for unknown color")
 
 	for _, color := range palette.Colors() {
 		found := false
