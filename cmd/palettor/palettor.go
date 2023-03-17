@@ -64,7 +64,7 @@ func main() {
 
 	palette, err := palettor.Extract(*k, *maxIters, img)
 	if err != nil {
-		log.Fatalf("Error extracing color palette: %s", err)
+		log.Fatalf("Error extracting color palette: %s", err)
 	}
 
 	if *jsonOutput {

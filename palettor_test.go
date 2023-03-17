@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"image/png"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // base64-encoded 4x4 png, w/ black, white, red, & blue pixels
@@ -18,12 +20,8 @@ func TestExtract(t *testing.T) {
 	}
 
 	_, err = Extract(5, 100, img)
-	if err == nil {
-		t.Errorf("k too large, expected an error")
-	}
+	assert.Error(t, err, "should error when k is too large")
 
 	palette, _ := Extract(4, 100, img)
-	if palette.Count() != 4 {
-		t.Errorf("expected 4 colors, got %d", palette.Count())
-	}
+	assert.Equal(t, 4, palette.Count())
 }

@@ -5,8 +5,6 @@ package palettor
 import (
 	"fmt"
 	"image"
-
-	"github.com/lucasb-eyer/go-colorful"
 )
 
 // Extract finds the k most dominant colors in the given image using the
@@ -20,17 +18,16 @@ func Extract(k, maxIterations int, img image.Image) (*Palette, error) {
 	return clusterColors(k, maxIterations, imgColors)
 }
 
-func getColors(img image.Image) ([]colorful.Color, error) {
+func getColors(img image.Image) ([]hcl, error) {
 	bounds := img.Bounds()
 	pixelCount := (bounds.Max.X - bounds.Min.X) * (bounds.Max.Y - bounds.Min.Y)
-	colors := make([]colorful.Color, pixelCount)
+	colors := make([]hcl, pixelCount)
 	i := 0
+	var err error
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			var ok bool
-			if colors[i], ok = colorful.MakeColor(img.At(x, y)); !ok {
-				// FIXME: presumably fails for images with transparency.
-				return nil, fmt.Errorf("pixel at (%v, %v) has a-channel 0", x, y)
+			if colors[i], err = toHCL(img.At(x, y)); err != nil {
+				return nil, fmt.Errorf("error translating pixel at (%v, %v): %w", x, y, err)
 			}
 			i++
 		}

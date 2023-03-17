@@ -2,39 +2,59 @@ package palettor
 
 import (
 	"encoding/json"
+	"fmt"
 	"image/color"
 	"sort"
 
 	"github.com/lucasb-eyer/go-colorful"
 )
 
+type rgbaKey [4]uint32
+
+func asKey(c color.Color) rgbaKey {
+	r, g, b, a := c.RGBA()
+	return rgbaKey{r, g, b, a}
+}
+
 // A Palette represents the dominant colors extracted from an image, as a
 // mapping from color to the weight of that color's cluster. The weight can be
 // used as an approximation for that color's relative dominance in an image.
 type Palette struct {
-	colorWeights map[colorful.Color]float64
-	converged    bool
-	iterations   int
+	entries    map[rgbaKey]Entry
+	converged  bool
+	iterations int
+}
+
+func (p *Palette) add(c color.Color, weight float64) {
+	if p.entries == nil {
+		p.entries = make(map[rgbaKey]Entry)
+	}
+	p.entries[asKey(c)] = Entry{Color: c, Weight: weight}
 }
 
 // Entry is a color and its weight in a Palette
 type Entry struct {
-	Color  colorful.Color `json:"color"`
-	Weight float64        `json:"weight"`
+	Color  color.Color `json:"color"`
+	Weight float64     `json:"weight"`
 }
 
 // MarshalJSON turns e into a more usefully readable JSON structure, with a hex
 // value and RGB values in the 0-255 interval.
 func (e Entry) MarshalJSON() ([]byte, error) {
 	type Alias Entry
-	r, g, b := e.Color.RGB255()
+	// Bodge: convert to colorful.Color for easier representation.
+	c, ok := colorful.MakeColor(e.Color)
+	if !ok {
+		return nil, fmt.Errorf("colorful can't handle color: %+v", e.Color)
+	}
+	r, g, b := c.RGB255()
 	return json.Marshal(&struct {
 		Color color.RGBA `json:"color"`
 		Hex   string     `json:"hex"`
 		Alias
 	}{
 		Color: color.RGBA{r, g, b, 255},
-		Hex:   e.Color.Hex(),
+		Hex:   c.Hex(),
 		Alias: (Alias)(e),
 	})
 }
@@ -43,8 +63,8 @@ func (e Entry) MarshalJSON() ([]byte, error) {
 func (p *Palette) Entries() []Entry {
 	entries := make([]Entry, p.Count())
 	i := 0
-	for c, weight := range p.colorWeights {
-		entries[i] = Entry{c, weight}
+	for _, entry := range p.entries {
+		entries[i] = entry
 		i++
 	}
 	sort.Sort(byWeight(entries))
@@ -52,10 +72,10 @@ func (p *Palette) Entries() []Entry {
 }
 
 // Colors returns a slice of the colors that comprise a Palette.
-func (p *Palette) Colors() []colorful.Color {
-	var colors []colorful.Color
-	for color := range p.colorWeights {
-		colors = append(colors, color)
+func (p *Palette) Colors() []color.Color {
+	var colors []color.Color
+	for _, entry := range p.entries {
+		colors = append(colors, entry.Color)
 	}
 	return colors
 }
@@ -68,7 +88,7 @@ func (p *Palette) Converged() bool {
 
 // Count returns the number of colors in a Palette.
 func (p *Palette) Count() int {
-	return len(p.colorWeights)
+	return len(p.entries)
 }
 
 // Iterations returns the number of iterations required to extract the colors
@@ -79,8 +99,12 @@ func (p *Palette) Iterations() int {
 
 // Weight returns the weight of a color in a Palette as a float in the range
 // [0, 1], or 0 if a given color is not found.
-func (p *Palette) Weight(c colorful.Color) float64 {
-	return p.colorWeights[c]
+func (p *Palette) Weight(c color.Color) float64 {
+	entry, ok := p.entries[asKey(c)]
+	if !ok {
+		return 0
+	}
+	return entry.Weight
 }
 
 // implement sort.Interface
