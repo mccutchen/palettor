@@ -110,20 +110,8 @@ func updateStep(clusters map[hcl][]hcl) (bool, []hcl) {
 // to instead use the actual mean of the given colors (which is likely
 // not actually present in those colors).
 func findCentroid(colors []hcl) hcl {
-	center := meanColor(colors)
+	center := mean(colors)
 	return nearest(center, colors)
-}
-
-// Find the average color in a list of colors.
-func meanColor(colors []hcl) hcl {
-	var hSum, cSum, lSum float64
-	for _, color := range colors {
-		hSum += color.h
-		cSum += color.c
-		lSum += color.l
-	}
-	count := float64(len(colors))
-	return hcl{hSum / count, cSum / count, lSum / count}
 }
 
 // Find the item in the haystack to which the needle is closest.
